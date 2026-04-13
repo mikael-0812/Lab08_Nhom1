@@ -471,6 +471,67 @@ if __name__ == "__main__":
             output_csv="ab_comparison.csv"
         )
         
+    # --- Grading Run ---
+    print("\n--- Chạy Grading Log ---")
+    generate_grading_log(config=VARIANT_CONFIG, grading_questions_path="data/grading_questions.json")
+
     print("\nLogs hoàn tất!")
 
     print("\nHoàn tất Sprint 4!")
+
+# =============================================================================
+# GRADING LOG GENERATOR
+# =============================================================================
+
+def generate_grading_log(config: Dict[str, Any], grading_questions_path: str = "data/grading_questions.json") -> None:
+    """
+    Chạy pipeline với grading_questions và xuất log ra logs/grading_run.json
+    """
+    q_path = Path(__file__).parent / grading_questions_path
+    if not q_path.exists():
+        print(f"Chưa có file {q_path.name}. Bỏ qua tạo grading log.")
+        return
+        
+    with open(q_path, "r", encoding="utf-8") as f:
+        questions = json.load(f)
+        
+    print(f"\n{'='*70}")
+    print(f"Chạy Grading Log với file {q_path.name}")
+    print('='*70)
+
+    log = []
+    for q in questions:
+        print(f"Đang xử lý: [{q['id']}] {q['question']}")
+        try:
+            result = rag_answer(
+                query=q["question"],
+                retrieval_mode=config.get("retrieval_mode", "dense"),
+                top_k_search=config.get("top_k_search", 10),
+                top_k_select=config.get("top_k_select", 3),
+                use_rerank=config.get("use_rerank", False),
+                verbose=False,
+            )
+            ans = result["answer"]
+            sources = result["sources"]
+            chunks_len = len(result["chunks_used"])
+        except Exception as e:
+            ans = f"PIPELINE_ERROR: {e}"
+            sources = []
+            chunks_len = 0
+            
+        log.append({
+            "id": q["id"],
+            "question": q["question"],
+            "answer": ans,
+            "sources": sources,
+            "chunks_retrieved": chunks_len,
+            "retrieval_mode": config.get("retrieval_mode", "dense"),
+            "timestamp": datetime.now().isoformat(),
+        })
+
+    logs_dir = Path(__file__).parent / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    out_path = logs_dir / "grading_run.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(log, f, ensure_ascii=False, indent=2)
+    print(f"\nĐã tạo log grading tại: {out_path}")
