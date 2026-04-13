@@ -40,14 +40,13 @@ BASELINE_CONFIG = {
     "label": "baseline_dense",
 }
 
-# Cấu hình variant (Sprint 3 — điều chỉnh theo lựa chọn của nhóm)
-# TODO Sprint 4: Cập nhật VARIANT_CONFIG theo variant nhóm đã implement
+# Cấu hình variant (Sprint 3 — dùng Hybrid Search)
 VARIANT_CONFIG = {
-    "retrieval_mode": "hybrid",   # Hoặc "dense" nếu chỉ đổi rerank
+    "retrieval_mode": "hybrid",
     "top_k_search": 10,
     "top_k_select": 3,
-    "use_rerank": True,           # Hoặc False nếu variant là hybrid không rerank
-    "label": "variant_hybrid_rerank",
+    "use_rerank": False,
+    "label": "variant_hybrid",
 }
 
 
@@ -56,67 +55,45 @@ VARIANT_CONFIG = {
 # 4 metrics từ slide: Faithfulness, Answer Relevance, Context Recall, Completeness
 # =============================================================================
 
-def score_faithfulness(
-    answer: str,
-    chunks_used: List[Dict[str, Any]],
-) -> Dict[str, Any]:
-    """
-    Faithfulness: Câu trả lời có bám đúng chứng cứ đã retrieve không?
-    Câu hỏi: Model có tự bịa thêm thông tin ngoài retrieved context không?
+def score_faithfulness(answer: str, chunks_used: List[Dict[str, Any]]) -> Dict[str, Any]:
+    from rag_answer import call_llm
+    if not chunks_used: return {"score": 1, "notes": "No chunks found, cannot be faithful"}
+    if "không đủ dữ liệu" in answer.lower(): return {"score": 5, "notes": "Abstained"}
+    
+    chunks_text = "\n".join([c.get("text", "") for c in chunks_used])
+    prompt = f"""You are an evaluator. Given these retrieved chunks:
+{chunks_text}
 
-    Thang điểm 1-5:
-      5: Mọi thông tin trong answer đều có trong retrieved chunks
-      4: Gần như hoàn toàn grounded, 1 chi tiết nhỏ chưa chắc chắn
-      3: Phần lớn grounded, một số thông tin có thể từ model knowledge
-      2: Nhiều thông tin không có trong retrieved chunks
-      1: Câu trả lời không grounded, phần lớn là model bịa
-
-    TODO Sprint 4 — Có 2 cách chấm:
-
-    Cách 1 — Chấm thủ công (Manual, đơn giản):
-        Đọc answer và chunks_used, chấm điểm theo thang trên.
-        Ghi lý do ngắn gọn vào "notes".
-
-    Cách 2 — LLM-as-Judge (Tự động, nâng cao):
-        Gửi prompt cho LLM:
-            "Given these retrieved chunks: {chunks}
-             And this answer: {answer}
-             Rate the faithfulness on a scale of 1-5.
-             5 = completely grounded in the provided context.
-             1 = answer contains information not in the context.
-             Output JSON: {'score': <int>, 'reason': '<string>'}"
-
-    Trả về dict với: score (1-5) và notes (lý do)
-    """
-    # TODO Sprint 4: Implement scoring
-    # Tạm thời trả về None (yêu cầu chấm thủ công)
-    return {
-        "score": None,
-        "notes": "TODO: Chấm thủ công hoặc implement LLM-as-Judge",
-    }
+And this answer: {answer}
+Rate the faithfulness on a scale of 1-5.
+5 = completely grounded in the provided context.
+1 = answer contains information not in the context.
+Output exactly a JSON object with two fields: "score" (integer) and "notes" (string explaining)."""
+    try:
+        res = call_llm(prompt)
+        res_json = json.loads(res.strip().strip("`").strip("json").strip())
+        return res_json
+    except Exception as e:
+        return {"score": 3, "notes": f"LLM parsing error for faithfulness: {e}"}
 
 
-def score_answer_relevance(
-    query: str,
-    answer: str,
-) -> Dict[str, Any]:
-    """
-    Answer Relevance: Answer có trả lời đúng câu hỏi người dùng hỏi không?
-    Câu hỏi: Model có bị lạc đề hay trả lời đúng vấn đề cốt lõi không?
+def score_answer_relevance(query: str, answer: str) -> Dict[str, Any]:
+    from rag_answer import call_llm
+    if "không đủ dữ liệu" in answer.lower(): return {"score": 3, "notes": "Abstained"}
 
-    Thang điểm 1-5:
-      5: Answer trả lời trực tiếp và đầy đủ câu hỏi
-      4: Trả lời đúng nhưng thiếu vài chi tiết phụ
-      3: Trả lời có liên quan nhưng chưa đúng trọng tâm
-      2: Trả lời lạc đề một phần
-      1: Không trả lời câu hỏi
-
-    TODO Sprint 4: Implement tương tự score_faithfulness
-    """
-    return {
-        "score": None,
-        "notes": "TODO: Implement score_answer_relevance",
-    }
+    prompt = f"""You are an evaluator. 
+Query: {query}
+Answer: {answer}
+Rate the answer relevance on a scale of 1-5.
+5: Answer trả lời trực tiếp và đầy đủ câu hỏi
+1: Không trả lời câu hỏi
+Output exactly a JSON object with two fields: "score" (integer) and "notes" (string explaining)."""
+    try:
+        res = call_llm(prompt)
+        res_json = json.loads(res.strip().strip("`").strip("json").strip())
+        return res_json
+    except Exception as e:
+        return {"score": 3, "notes": f"LLM parsing error for relevance: {e}"}
 
 
 def score_context_recall(
@@ -175,33 +152,23 @@ def score_context_recall(
     }
 
 
-def score_completeness(
-    query: str,
-    answer: str,
-    expected_answer: str,
-) -> Dict[str, Any]:
-    """
-    Completeness: Answer có thiếu điều kiện ngoại lệ hoặc bước quan trọng không?
-    Câu hỏi: Answer có bao phủ đủ thông tin so với expected_answer không?
+def score_completeness(query: str, answer: str, expected_answer: str) -> Dict[str, Any]:
+    from rag_answer import call_llm
+    if not expected_answer: return {"score": 3, "notes": "No expected answer provided"}
 
-    Thang điểm 1-5:
-      5: Answer bao gồm đủ tất cả điểm quan trọng trong expected_answer
-      4: Thiếu 1 chi tiết nhỏ
-      3: Thiếu một số thông tin quan trọng
-      2: Thiếu nhiều thông tin quan trọng
-      1: Thiếu phần lớn nội dung cốt lõi
-
-    TODO Sprint 4:
-    Option 1 — Chấm thủ công: So sánh answer vs expected_answer và chấm.
-    Option 2 — LLM-as-Judge:
-        "Compare the model answer with the expected answer.
-         Rate completeness 1-5. Are all key points covered?
-         Output: {'score': int, 'missing_points': [str]}"
-    """
-    return {
-        "score": None,
-        "notes": "TODO: Implement score_completeness (so sánh với expected_answer)",
-    }
+    prompt = f"""You are an evaluator.
+Compare the model answer with the expected answer.
+Query: {query}
+Expected: {expected_answer}
+Actual Answer: {answer}
+Rate completeness 1-5. Are all key points covered?
+Output exactly a JSON object with two fields: "score" (integer) and "notes" (string explaining)."""
+    try:
+        res = call_llm(prompt)
+        res_json = json.loads(res.strip().strip("`").strip("json").strip())
+        return res_json
+    except Exception as e:
+        return {"score": 3, "notes": f"LLM parsing error for completeness: {e}"}
 
 
 # =============================================================================
@@ -487,29 +454,84 @@ if __name__ == "__main__":
         baseline_results = []
 
     # --- Chạy Variant (sau khi Sprint 3 hoàn thành) ---
-    # TODO Sprint 4: Uncomment sau khi implement variant trong rag_answer.py
-    # print("\n--- Chạy Variant ---")
-    # variant_results = run_scorecard(
-    #     config=VARIANT_CONFIG,
-    #     test_questions=test_questions,
-    #     verbose=True,
-    # )
-    # variant_md = generate_scorecard_summary(variant_results, VARIANT_CONFIG["label"])
-    # (RESULTS_DIR / "scorecard_variant.md").write_text(variant_md, encoding="utf-8")
+    print("\n--- Chạy Variant ---")
+    variant_results = run_scorecard(
+        config=VARIANT_CONFIG,
+        test_questions=test_questions,
+        verbose=True,
+    )
+    variant_md = generate_scorecard_summary(variant_results, VARIANT_CONFIG["label"])
+    (RESULTS_DIR / "scorecard_variant.md").write_text(variant_md, encoding="utf-8")
 
     # --- A/B Comparison ---
-    # TODO Sprint 4: Uncomment sau khi có cả baseline và variant
-    # if baseline_results and variant_results:
-    #     compare_ab(
-    #         baseline_results,
-    #         variant_results,
-    #         output_csv="ab_comparison.csv"
-    #     )
+    if baseline_results and variant_results:
+        compare_ab(
+            baseline_results,
+            variant_results,
+            output_csv="ab_comparison.csv"
+        )
+        
+    # --- Grading Run ---
+    print("\n--- Chạy Grading Log ---")
+    generate_grading_log(config=VARIANT_CONFIG, grading_questions_path="data/grading_questions.json")
 
-    print("\n\nViệc cần làm Sprint 4:")
-    print("  1. Hoàn thành Sprint 2 + 3 trước")
-    print("  2. Chấm điểm thủ công hoặc implement LLM-as-Judge trong score_* functions")
-    print("  3. Chạy run_scorecard(BASELINE_CONFIG)")
-    print("  4. Chạy run_scorecard(VARIANT_CONFIG)")
-    print("  5. Gọi compare_ab() để thấy delta")
-    print("  6. Cập nhật docs/tuning-log.md với kết quả và nhận xét")
+    print("\nLogs hoàn tất!")
+
+    print("\nHoàn tất Sprint 4!")
+
+# =============================================================================
+# GRADING LOG GENERATOR
+# =============================================================================
+
+def generate_grading_log(config: Dict[str, Any], grading_questions_path: str = "data/grading_questions.json") -> None:
+    """
+    Chạy pipeline với grading_questions và xuất log ra logs/grading_run.json
+    """
+    q_path = Path(__file__).parent / grading_questions_path
+    if not q_path.exists():
+        print(f"Chưa có file {q_path.name}. Bỏ qua tạo grading log.")
+        return
+        
+    with open(q_path, "r", encoding="utf-8") as f:
+        questions = json.load(f)
+        
+    print(f"\n{'='*70}")
+    print(f"Chạy Grading Log với file {q_path.name}")
+    print('='*70)
+
+    log = []
+    for q in questions:
+        print(f"Đang xử lý: [{q['id']}] {q['question']}")
+        try:
+            result = rag_answer(
+                query=q["question"],
+                retrieval_mode=config.get("retrieval_mode", "dense"),
+                top_k_search=config.get("top_k_search", 10),
+                top_k_select=config.get("top_k_select", 3),
+                use_rerank=config.get("use_rerank", False),
+                verbose=False,
+            )
+            ans = result["answer"]
+            sources = result["sources"]
+            chunks_len = len(result["chunks_used"])
+        except Exception as e:
+            ans = f"PIPELINE_ERROR: {e}"
+            sources = []
+            chunks_len = 0
+            
+        log.append({
+            "id": q["id"],
+            "question": q["question"],
+            "answer": ans,
+            "sources": sources,
+            "chunks_retrieved": chunks_len,
+            "retrieval_mode": config.get("retrieval_mode", "dense"),
+            "timestamp": datetime.now().isoformat(),
+        })
+
+    logs_dir = Path(__file__).parent / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    out_path = logs_dir / "grading_run.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(log, f, ensure_ascii=False, indent=2)
+    print(f"\nĐã tạo log grading tại: {out_path}")
