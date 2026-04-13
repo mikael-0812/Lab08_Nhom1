@@ -17,8 +17,8 @@
 [Grounded Answer + Citation]
 ```
 
-**Mô tả ngắn gọn:**
-> TODO: Mô tả hệ thống trong 2-3 câu. Nhóm xây gì? Cho ai dùng? Giải quyết vấn đề gì?
+**Môn:** AI trong hành động.
+**Hệ thống RAG Helpdesk** giúp tự động tìm kiếm và trả lời các thắc mắc về chính sách, SLA cấp quyền trong môi trường kỹ thuật của công ty (IT & CS). Hệ thống chống sinh ra thông tin giả (Hallucination) thông qua quy trình đánh giá khắt khe.
 
 ---
 
@@ -27,22 +27,22 @@
 ### Tài liệu được index
 | File | Nguồn | Department | Số chunk |
 |------|-------|-----------|---------|
-| `policy_refund_v4.txt` | policy/refund-v4.pdf | CS | TODO |
-| `sla_p1_2026.txt` | support/sla-p1-2026.pdf | IT | TODO |
-| `access_control_sop.txt` | it/access-control-sop.md | IT Security | TODO |
-| `it_helpdesk_faq.txt` | support/helpdesk-faq.md | IT | TODO |
-| `hr_leave_policy.txt` | hr/leave-policy-2026.pdf | HR | TODO |
+| `policy_refund_v4.txt` | policy/refund-v4.pdf | CS | ~ |
+| `sla_p1_2026.txt` | support/sla-p1-2026.pdf | IT | ~ |
+| `access_control_sop.txt` | it/access-control-sop.md | IT Security | ~ |
+| `it_helpdesk_faq.txt` | support/helpdesk-faq.md | IT | ~ |
+| `hr_leave_policy.txt` | hr/leave-policy-2026.pdf | HR | ~ |
 
 ### Quyết định chunking
 | Tham số | Giá trị | Lý do |
 |---------|---------|-------|
-| Chunk size | TODO tokens | TODO |
-| Overlap | TODO tokens | TODO |
-| Chunking strategy | Heading-based / paragraph-based | TODO |
+| Chunk size | 400 tokens | Optimal spot cho tài liệu chính sách |
+| Overlap | 80 tokens | Để không đứt đoạn câu |
+| Chunking strategy | Paragraph-based | Sử dụng `\n\n` để phân chia đoạn tự nhiên |
 | Metadata fields | source, section, effective_date, department, access | Phục vụ filter, freshness, citation |
 
 ### Embedding model
-- **Model**: TODO (OpenAI text-embedding-3-small / paraphrase-multilingual-MiniLM-L12-v2)
+- **Model**: Sentence Transformers API (`paraphrase-multilingual-MiniLM-L12-v2`)
 - **Vector store**: ChromaDB (PersistentClient)
 - **Similarity metric**: Cosine
 
@@ -61,15 +61,14 @@
 ### Variant (Sprint 3)
 | Tham số | Giá trị | Thay đổi so với baseline |
 |---------|---------|------------------------|
-| Strategy | TODO (hybrid / dense) | TODO |
-| Top-k search | TODO | TODO |
-| Top-k select | TODO | TODO |
-| Rerank | TODO (cross-encoder / MMR) | TODO |
-| Query transform | TODO (expansion / HyDE / decomposition) | TODO |
+| Strategy | Hybrid (Dense + Sparse) | Dense search + BM25 keyword matching |
+| Top-k search | 10 | Tăng lên |
+| Top-k select | 3 | Chọn top 3 trả lời bằng RRF |
+| Rerank | Không | Không dùng Cross Encoder do token limit/ tốc độ |
+| Query transform | Không | Giữ nguyên query cấu trúc |
 
 **Lý do chọn variant này:**
-> TODO: Giải thích tại sao chọn biến này để tune.
-> Ví dụ: "Chọn hybrid vì corpus có cả câu tự nhiên (policy) lẫn mã lỗi và tên chuyên ngành (SLA ticket P1, ERR-403)."
+> Quyết định lựa chọn phương pháp **Hybrid Search** bằng cách mix điểm Similarity RRF vì bộ dữ liệu chứa nhiều tên mã, tag kỹ thuật (e.g. ERR-403) và mã SLA. Dense search thông thường rất dễ bỏ sót các mã chính xác này.
 
 ---
 
@@ -96,7 +95,7 @@ Answer:
 ### LLM Configuration
 | Tham số | Giá trị |
 |---------|---------|
-| Model | TODO (gpt-4o-mini / gemini-1.5-flash) |
+| Model | OpenAI `gpt-4o-mini` |
 | Temperature | 0 (để output ổn định cho eval) |
 | Max tokens | 512 |
 
