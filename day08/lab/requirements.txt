@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Day 08 Lab — RAG Pipeline
 # Cài đặt: pip install -r requirements.txt
 
@@ -26,3 +27,12 @@ rank-bm25>=0.2.2                 # BM25 keyword search
 
 # === Utils ===
 tqdm>=4.66.0                     # Progress bar khi index nhiều docs
+=======
+python-dotenv>=1.0.0
+openai>=1.0.0
+google-generativeai>=0.5.0
+chromadb>=0.5.0
+sentence-transformers>=2.7.0
+rank-bm25>=0.2.2
+tqdm>=4.66.0
+>>>>>>> 0087ec5e822ab33fb34176e109a5daf1d07e4eba
