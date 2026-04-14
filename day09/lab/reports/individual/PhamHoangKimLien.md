@@ -3,87 +3,86 @@
 **Họ và tên:** Phạm Hoàng Kim Liên
 **Vai trò trong nhóm:** MCP Owner 
 **Ngày nộp:** 14/04/2026  
-**Độ dài yêu cầu:** 500–800 từ
+**Độ bài yêu cầu:** 500–800 từ (Bản cập nhật sau khi tối ưu Retrieval)
 
 ---
 
 ## 1. Tôi phụ trách phần nào? (100–150 từ)
 
-Trong dự án Lab Day 09, tôi chịu trách nhiệm chính về module **MCP (Model Context Protocol) Server** và hệ thống tương tác công cụ cho Agent. Cụ thể:
-- **File chính:** `mcp_server.py` và `mcp_interactive.py`.
-- **Functions tôi implement:** Tôi đã xây dựng các hàm `dispatch_tool`, `list_tools` để mô phỏng giao thức MCP Client-Server. Tôi trực tiếp cài đặt logic cho 4 công cụ (Tools): `search_kb` (kết nối với ChromaDB), `get_ticket_info` (tra cứu Jira mock), `check_access_permission` (kiểm tra luật SOP) và `create_ticket`.
+Trong dự án Lab Day 09, bên cạnh trách nhiệm chính về module **MCP (Model Context Protocol) Server**, tôi đã đảm nhận thêm phần tối ưu hóa và sửa lỗi cho pipeline **Retrieval & Indexing**. Cụ thể:
+- **File chính:** `mcp_server.py`, `mcp_interactive.py`, `workers/retrieval.py` và `reindex_data.py` (mới).
+- **Functions tôi implement/tối ưu:** Xây dựng bộ công cụ MCP (`search_kb`, `get_ticket_info`), sửa lỗi mã hóa (Encoding) trong worker retrieval, và thiết kế lại quy trình Indexing dữ liệu vào ChromaDB bằng script `reindex_data.py`.
 
 **Cách công việc của tôi kết nối với phần của thành viên khác:**
-Công việc của tôi là "trái tim" cung cấp khả năng hành động cho các Worker. Cụ thể, `policy_tool_worker` của thành viên khác gọi vào hàm `dispatch_tool` của tôi để thực thi các tác vụ ngoại vi mà LLM không tự làm được. Supervisor cũng dựa vào danh sách `TOOL_SCHEMAS` mà tôi định nghĩa để quyết định lộ trình điều hướng (`needs_tool`).
+Phần việc của tôi cung cấp "dữ liệu sạch" cho toàn bộ hệ thống. Nếu MCP và Retrieval không hoạt động chính xác, Synthesis Worker sẽ không có đủ thông tin để trả lời (dẫn đến lỗi "Không đủ thông tin"). Tôi trực tiếp hỗ trợ Worker Owner sửa lỗi logic tìm kiếm để đảm bảo kết quả chấm điểm (grading run) đạt độ tự tin cao nhất.
 
 **Bằng chứng:**
-- File `mcp_server.py` chứa định nghĩa `TOOL_SCHEMAS` và registry tools.
-- Script `mcp_interactive.py` cho phép test độc lập các tool call.
-- Commit logs cho thấy tôi đã cấu hình Virtual Environment và fix lỗi thiếu thư viện `chromadb` để `search_kb` có thể hoạt động thực tế.
+- File `reindex_data.py` thực hiện chia nhỏ file (chunking) thành 63 đoạn thay vì 5 đoạn như ban đầu.
+- File `workers/retrieval.py` đã được xử lý lỗi Encoding (SyntaxError) giúp import ổn định.
+- Kết quả trong `artifacts/grading_run.jsonl` sau khi tôi tối ưu đã có câu trả lời chi tiết cho các câu gq08, gq10 thay vì báo lỗi thiếu thông tin.
 
 ---
 
 ## 2. Tôi đã ra một quyết định kỹ thuật gì? (150–200 từ)
 
-**Quyết định:** Sử dụng **Keyword-based Routing kết hợp với MCP Discovery Schema** thay vì dùng LLM Classifer cho bước Supervisor định hướng ban đầu.
+**Quyết định:** Sử dụng **Paragraph-based Chunking (phân đoạn theo đoạn văn)** thay vì index nguyên khối toàn bộ file văn bản.
 
 **Lý do:**
-Ban đầu, nhóm cân nhắc dùng một LLM call (như GPT-4o-mini) trong `supervisor_node` để phân loại yêu cầu của user. Tuy nhiên, qua quá trình test với các câu hỏi về SLA và hoàn tiền, tôi nhận thấy keyword-based routing (với bộ từ khóa được tối ưu như `flash sale`, `license`, `p1`, `escalation`) mang lại tốc độ phản hồi cực nhanh (~10-20ms) so với LLM (~800ms-1200ms). Đồng thời, việc định nghĩa `inputSchema` chuẩn MCP giúp logic routing trở nên rõ ràng, dễ bảo trì hơn khi cần thêm tool mới.
+Ban đầu, hệ thống chỉ index 5 file tài liệu tương ứng với 5 "chunks" khổng lồ trong ChromaDB. Điều này khiến thuật toán tìm kiếm vector (Cosine Similarity) bị nhiễu thông tin, không thể xác định chính xác các chi tiết nhỏ như "số ngày đổi mật khẩu" hay "người phê duyệt Level 3". 
+Tôi đã quyết định viết lại script indexing, sử dụng kỹ thuật split văn bản dựa trên ký tự xuống dòng kép (`\n\n`). Quyết định này giúp chia nhỏ kiến thức thành từng câu hỏi FAQ hoặc từng điều khoản chính sách riêng biệt.
 
 **Trade-off đã chấp nhận:**
-Keyword routing có thể bị sai nếu user dùng ngôn ngữ quá ẩn dụ hoặc không chứa từ khóa mục tiêu. Tuy nhiên, tôi đã chấp nhận trade-off này vì yêu cầu của bài Lab tập trung vào tính ổn định và tốc độ xử lý của pipeline Supervisor-Worker.
+Việc chia nhỏ chunk làm tăng số lượng bản ghi trong database (từ 5 lên 63), dẫn đến thời gian query tăng nhẹ. Tuy nhiên, đánh đổi này là hoàn toàn xứng đáng vì nó giải quyết triệt để lỗi "Abstain" (Agent từ chối trả lời vì không tìm thấy bằng chứng đủ mạnh).
 
 **Bằng chứng từ trace/code:**
-Trong file `graph.py` (line 116-121), tôi đã gộp các bộ từ khóa từ cả bản local và remote để tối ưu độ phủ:
+Trong file `reindex_data.py`, tôi đã implement logic:
 ```python
-policy_keywords = ["hoàn tiền", "refund", "flash sale", "license", "cấp quyền", "access", "level 3", "chính sách"]
-retrieval_keywords = ["p1", "escalation", "sla", "ticket", "jira", "thời gian", "phản hồi", "quy trình", "sự cố", "đăng nhập", "remote", "thử việc", "probation"]
+chunks = [c.strip() for c in content.split("\n\n") if len(c.strip()) > 50]
 ```
-Kết quả trong trace JSON cho thấy `latency_ms` giảm đáng kể khi Supervisor không cần gọi API ngoài.
+Sau khi áp dụng, độ tin cậy (`confidence`) của các câu hỏi trong `view_results.py` đạt mức trung bình 0.7, so với mức 0.1 trước khi tối ưu.
 
 ---
 
 ## 3. Tôi đã sửa một lỗi gì? (150–200 từ)
 
-**Lỗi:** `ModuleNotFoundError: No module named 'chromadb'` và lỗi môi trường `externally-managed-environment`.
+**Lỗi:** `SyntaxError: Non-UTF-8 code` trong file retrieval và lỗi logic **"Abstain Hallucination"**.
 
 **Symptom:** 
-Khi chạy `mcp_interactive.py` hoặc `graph.py`, hệ thống bị crash ngay lập tức khi gọi đến tool `search_kb`. Traceback cho thấy các thư viện quan trọng như `chromadb` và `sentence-transformers` chưa được cài đặt, mặc dù đã có file `requirements.txt`. Khi cố gắng cài đặt bằng `pip install`, macOS trả về lỗi bảo mật do Python do Homebrew quản lý không cho phép cài đặt global.
+Khi chạy pipeline chấm điểm, Agent liên tục trả lời "Không đủ thông tin trong tài liệu nội bộ" cho các câu hỏi rõ ràng có trong FAQ. Ngoài ra, script `retrieval.py` bị crash khi chạy độc lập do lỗi mã hóa ký tự ở dòng comment cuối cùng.
 
 **Root cause:**
-Môi trường Python trên máy Mac của tôi được cấu hình theo chuẩn PEP 668, yêu cầu phải dùng Virtual Environment để cài đặt package mới nhằm tránh làm hỏng Python hệ thống.
+- Một comment chứa ký tự Latin lạ (Ð) không được định dạng chuẩn UTF-8 khiến Python interpreter bị lỗi.
+- Database ChromaDB bị "đói" dữ liệu do cơ chế indexing cũ quá thô sơ, không cung cấp đủ context liên quan cho LLM.
 
 **Cách sửa:**
-Tôi đã khởi tạo một môi trường ảo riêng biệt cho dự án:
-1. `python3 -m venv .venv`
-2. `source .venv/bin/activate`
-3. Cài đặt lại toàn bộ dependencies: `pip install -r requirements.txt`
+- Tôi đã sử dụng lệnh `iconv` để làm sạch file `retrieval.py` và xóa bỏ các ký tự gây lỗi mã hóa.
+- Thực hiện xóa collection cũ trên ChromaDB và chạy lại `reindex_data.py` với cơ chế chunking mới.
 
 **Bằng chứng trước/sau:**
-- **Trước khi sửa:** Tool `search_kb` trả về kết quả rỗng `{"chunks": [], "total_found": 0}` và in cảnh báo `WARNING: Using random embeddings`.
-- **Sau khi sửa:** Tool `search_kb` đã load được model `all-MiniLM-L6-v2` và truy vấn thành công dữ liệu từ `chroma_db/`, trả về các thông tin chính xác về chính sách nghỉ ốm và SLA.
+- **Trước:** Câu trả lời gq08 là "Không đủ thông tin", confidence 0.1.
+- **Sau:** Câu trả lời gq08: "Nhân viên phải đổi mật khẩu sau 90 ngày. Hệ thống sẽ cảnh báo trước 7 ngày...", confidence 0.7.
 
 ---
 
 ## 4. Tôi tự đánh giá đóng góp của mình (100–150 từ)
 
 **Tôi làm tốt nhất ở điểm nào?**
-Tôi đã hoàn thành tốt vai trò MCP Owner bằng việc xây dựng một hệ thống Tool Registry chuẩn mực, dễ mở rộng. Việc định nghĩa Schema chi tiết giúp Worker và Synthesis dễ dàng hiểu được format dữ liệu trả về mà không cần hard-code.
+Tôi đã chủ động debug sâu vào hệ thống retrieval để tìm ra nguyên nhân gốc rễ của việc Agent trả lời sai, thay vì chỉ tập trung vào module MCP được giao. Việc thiết kế lại script indexing giúp cải thiện chất lượng của toàn bộ 10 câu hỏi chấm điểm.
 
 **Tôi làm chưa tốt hoặc còn yếu ở điểm nào?**
-Tôi còn lúng túng khi xử lý các xung đột (Merge Conflict) lúc `git pull` từ repo chung của nhóm, dẫn đến mất thời gian cho việc rebase thủ công file `graph.py`.
+Tôi mất khá nhiều thời gian ban đầu để loay hoay với lỗi Encoding của Python trên MacOS, điều này có thể đã được xử lý nhanh hơn nếu tôi nắm vững các công cụ dòng lệnh xử lý text từ đầu.
 
 **Nhóm phụ thuộc vào tôi ở đâu?**
-Nếu module MCP của tôi không chạy, toàn bộ Agent sẽ "mù" thông tin về hệ thống bên ngoài (Jira, Database). Synthesis Worker sẽ không có context để trả lời các câu hỏi về Ticket hay Policy chuyên sâu.
+Nhóm phụ thuộc vào tôi để có một Knowledge Base hoạt động ổn định. Nếu không có phần tối ưu retrieval của tôi, điểm số của nhóm trong phần "Accuracy" và "Citation" sẽ rất thấp.
 
 **Phần tôi phụ thuộc vào thành viên khác:**
-Tôi phụ thuộc vào Trace & Docs Owner để đảm bảo kết quả từ tool call của tôi được lưu lại chính xác trong file JSON artifacts, phục vụ cho việc chấm điểm (Scoring).
+Tôi phụ thuộc vào Worker Owner (SLA/Policy) để cung cấp các test case thực tế nhằm kiểm chứng xem các đoạn văn bản tôi chunk ra đã thực sự tối ưu hay chưa.
 
 ---
 
 ## 5. Nếu có thêm 2 giờ, tôi sẽ làm gì? (50–100 từ)
 
-Tôi sẽ nâng cấp `mcp_server.py` thành một HTTP Server thực thụ bằng thư viện `fastmcp` thay vì dùng "mock class" như hiện tại. Trace của câu hỏi về ticket P1 cho thấy chúng ta đang import trực tiếp module, điều này vi phạm tính cô lập của microservices. Nếu dùng HTTP server, MCP server có thể chạy trên một container riêng, tăng tính linh hoạt và chuyên nghiệp cho hệ thống.
+Tôi sẽ triển khai kỹ thuật **Semantic Chunking** thay vì chỉ split theo ký tự xuống dòng. Tôi nhận thấy ở câu gq09, Agent vẫn còn bị sót một phần nhỏ thông tin do việc split thủ công đôi khi cắt ngang các quy trình liên quan. Nếu dùng LLM hoặc thư viện như LangChain để split theo ngữ nghĩa, chất lượng truy xuất sẽ còn hoàn hảo hơn nữa.
 
 ---
-*Lưu file này với tên: `reports/individual/lien_pham.md`*  
+*Lưu file này với tên: `reports/individual/PhamHoangKimLien.md`*  
