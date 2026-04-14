@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-14T14:10:57.336706",
+  "generated_at": "2026-04-14T17:21:59.450851",
   "day08_single_agent": {
     "total_questions": 15,
     "avg_confidence": 0.0,
@@ -8,35 +8,35 @@
     "multi_hop_accuracy": "?"
   },
   "day09_multi_agent": {
-    "total_traces": 41,
+    "total_traces": 33,
     "routing_distribution": {
-      "retrieval_worker": "20/41 (48%)",
-      "policy_tool_worker": "21/41 (51%)"
+      "retrieval_worker": "17/33 (51%)",
+      "policy_tool_worker": "16/33 (48%)"
     },
-    "avg_confidence": 0.396,
-    "avg_latency_ms": 10022,
-    "mcp_usage_rate": "21/41 (51%)",
-    "hitl_rate": "2/41 (4%)",
+    "avg_confidence": 0.291,
+    "avg_latency_ms": 11856,
+    "mcp_usage_rate": "16/33 (48%)",
+    "hitl_rate": "2/33 (6%)",
     "top_sources": [
       [
         "policy_refund_v4.txt",
-        16
+        8
       ],
       [
         "hr_leave_policy.txt",
-        12
+        6
       ],
       [
         "sla_p1_2026.txt",
-        10
+        5
       ],
       [
         "access_control_sop.txt",
-        10
+        5
       ],
       [
         "it_helpdesk_faq.txt",
-        6
+        3
       ]
     ]
   },

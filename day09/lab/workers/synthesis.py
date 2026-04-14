@@ -247,6 +247,4 @@ if __name__ == "__main__":
     print(f"Confidence: {result2['confidence']}")
 
     print("\nâœ… synthesis_worker test done.")
-# Owner: Ðào Quang Th?ng
- 
- 
+# Owner: ï¿½ï¿½o Quang Th?ng
