@@ -13,9 +13,6 @@ import json
 import os
 from datetime import datetime
 from typing import TypedDict, Literal, Optional
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Uncomment nếu dùng LangGraph:
 # from langgraph.graph import StateGraph, END
@@ -178,24 +175,58 @@ def human_review_node(state: AgentState) -> AgentState:
 # 5. Import Workers
 # ─────────────────────────────────────────────
 
-from workers.retrieval import run as retrieval_run
-from workers.policy_tool import run as policy_tool_run
-from workers.synthesis import run as synthesis_run
+# TODO Sprint 2: Uncomment sau khi implement workers
+# from workers.retrieval import run as retrieval_run
+# from workers.policy_tool import run as policy_tool_run
+# from workers.synthesis import run as synthesis_run
 
 
 def retrieval_worker_node(state: AgentState) -> AgentState:
     """Wrapper gọi retrieval worker."""
-    return retrieval_run(state)
+    # TODO Sprint 2: Thay bằng retrieval_run(state)
+    state["workers_called"].append("retrieval_worker")
+    state["history"].append("[retrieval_worker] called")
+
+    # Placeholder output để test graph chạy được
+    state["retrieved_chunks"] = [
+        {"text": "SLA P1: phản hồi 15 phút, xử lý 4 giờ.", "source": "sla_p1_2026.txt", "score": 0.92}
+    ]
+    state["retrieved_sources"] = ["sla_p1_2026.txt"]
+    state["history"].append(f"[retrieval_worker] retrieved {len(state['retrieved_chunks'])} chunks")
+    return state
 
 
 def policy_tool_worker_node(state: AgentState) -> AgentState:
     """Wrapper gọi policy/tool worker."""
-    return policy_tool_run(state)
+    # TODO Sprint 2: Thay bằng policy_tool_run(state)
+    state["workers_called"].append("policy_tool_worker")
+    state["history"].append("[policy_tool_worker] called")
+
+    # Placeholder output
+    state["policy_result"] = {
+        "policy_applies": True,
+        "policy_name": "refund_policy_v4",
+        "exceptions_found": [],
+        "source": "policy_refund_v4.txt",
+    }
+    state["history"].append("[policy_tool_worker] policy check complete")
+    return state
 
 
 def synthesis_worker_node(state: AgentState) -> AgentState:
     """Wrapper gọi synthesis worker."""
-    return synthesis_run(state)
+    # TODO Sprint 2: Thay bằng synthesis_run(state)
+    state["workers_called"].append("synthesis_worker")
+    state["history"].append("[synthesis_worker] called")
+
+    # Placeholder output
+    chunks = state.get("retrieved_chunks", [])
+    sources = state.get("retrieved_sources", [])
+    state["final_answer"] = f"[PLACEHOLDER] Câu trả lời được tổng hợp từ {len(chunks)} chunks."
+    state["sources"] = sources
+    state["confidence"] = 0.75
+    state["history"].append(f"[synthesis_worker] answer generated, confidence={state['confidence']}")
+    return state
 
 
 # ─────────────────────────────────────────────
@@ -293,7 +324,7 @@ if __name__ == "__main__":
     ]
 
     for query in test_queries:
-        print(f"\n[Q] Query: {query}")
+        print(f"\n▶ Query: {query}")
         result = run_graph(query)
         print(f"  Route   : {result['supervisor_route']}")
         print(f"  Reason  : {result['route_reason']}")

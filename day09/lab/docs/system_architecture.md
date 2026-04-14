@@ -12,7 +12,8 @@
 
 **Pattern đã chọn:** Supervisor-Worker  
 **Lý do chọn pattern này (thay vì single agent):**
-Kiến trúc Supervisor-Worker giúp tách biệt các trách nhiệm (separation of concerns). Supervisor tập trung vào việc hiểu ý định người dùng và điều phối, trong khi các Worker tập trung vào các nhiệm vụ chuyên biệt như truy xuất (Retrieval), kiểm tra chính sách (Policy/Tools), và tổng hợp (Synthesis). Điều này giúp hệ thống dễ dàng mở rộng, gỡ lỗi và kiểm soát chất lượng phản hồi tốt hơn so với một Agent duy nhất làm tất cả mọi việc.
+
+_________________
 
 ---
 
@@ -50,27 +51,8 @@ Retrieval Worker     Policy Tool Worker
 
 **Sơ đồ thực tế của nhóm:**
 
-```mermaid
-graph TD
-    User([User Request]) --> Supervisor[Supervisor Node]
-    Supervisor -->|Route Reason| Decision{Route Decision}
-    Decision -->|retrieval_worker| Retrieval[Retrieval Worker]
-    Decision -->|policy_tool_worker| Policy[Policy Tool Worker]
-    Decision -->|human_review| Human[Human Review Node]
-    
-    Retrieval --> Synthesis[Synthesis Worker]
-    Policy -->|Requires Context| Retrieval
-    Policy --> Synthesis
-    Human --> Retrieval
-    
-    Synthesis --> Output([Final Answer])
-    
-    subgraph MCP Server
-        KB[search_kb]
-        Ticket[get_ticket_info]
-    end
-    
-    Policy -.-> MCP
+```
+[NHÓM ĐIỀN VÀO ĐÂY]
 ```
 
 ---
@@ -81,37 +63,37 @@ graph TD
 
 | Thuộc tính | Mô tả |
 |-----------|-------|
-| **Nhiệm vụ** | Phân tích câu hỏi, quyết định worker tiếp theo, gắn cờ rủi ro (risk) và nhu cầu sử dụng công cụ (tool). |
-| **Input** | `AgentState` chứa `task`. |
-| **Output** | `supervisor_route`, `route_reason`, `risk_high`, `needs_tool`. |
-| **Routing logic** | Dựa trên keyword matching (hoàn tiền, cấp quyền, SLA, P1...) để phân loại. |
-| **HITL condition** | Khi có mã lỗi không rõ (`err-`) đi kèm rủi ro cao. |
+| **Nhiệm vụ** | ___________________ |
+| **Input** | ___________________ |
+| **Output** | supervisor_route, route_reason, risk_high, needs_tool |
+| **Routing logic** | ___________________ |
+| **HITL condition** | ___________________ |
 
 ### Retrieval Worker (`workers/retrieval.py`)
 
 | Thuộc tính | Mô tả |
 |-----------|-------|
-| **Nhiệm vụ** | Truy xuất các đoạn văn bản liên quan từ ChromaDB bằng Vector Search (Dense). |
-| **Embedding model** | `all-MiniLM-L6-v2` via `SentenceTransformer`. |
-| **Top-k** | Default 3. |
-| **Stateless?** | Yes |
+| **Nhiệm vụ** | ___________________ |
+| **Embedding model** | ___________________ |
+| **Top-k** | ___________________ |
+| **Stateless?** | Yes / No |
 
 ### Policy Tool Worker (`workers/policy_tool.py`)
 
 | Thuộc tính | Mô tả |
 |-----------|-------|
-| **Nhiệm vụ** | Kiểm tra các quy tắc/ngoại lệ chính sách và gọi các công cụ MCP nếu cần thông tin bổ sung. |
-| **MCP tools gọi** | `search_kb`, `get_ticket_info`. |
-| **Exception cases xử lý** | Flash Sale, Digital products, Activated products, Temporal scoping (v3 vs v4). |
+| **Nhiệm vụ** | ___________________ |
+| **MCP tools gọi** | ___________________ |
+| **Exception cases xử lý** | ___________________ |
 
 ### Synthesis Worker (`workers/synthesis.py`)
 
 | Thuộc tính | Mô tả |
 |-----------|-------|
-| **LLM model** | `gpt-4o-mini`. |
-| **Temperature** | 0.1 |
-| **Grounding strategy** | Đưa chunks và policy result vào prompt, bắt buộc trích dẫn [tên_file]. |
-| **Abstain condition** | Trả lời "Không đủ thông tin" nếu context trống hoặc không liên quan. |
+| **LLM model** | ___________________ |
+| **Temperature** | ___________________ |
+| **Grounding strategy** | ___________________ |
+| **Abstain condition** | ___________________ |
 
 ### MCP Server (`mcp_server.py`)
 

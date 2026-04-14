@@ -1,14 +1,16 @@
 # Báo Cáo Nhóm — Lab Day 09: Multi-Agent Orchestration
 
-**Tên nhóm:** Antigravity Team  
+**Tên nhóm:** ___________  
 **Thành viên:**
 | Tên | Vai trò | Email |
 |-----|---------|-------|
-| Antigravity | Supervisor Owner | assistant@ai.google |
-| User | Product Owner | user@example.com |
+| ___ | Supervisor Owner | ___ |
+| ___ | Worker Owner | ___ |
+| ___ | MCP Owner | ___ |
+| ___ | Trace & Docs Owner | ___ |
 
-**Ngày nộp:** 2026-04-14  
-**Repo:** Lecture-Day-08-09-10-main/day09/lab  
+**Ngày nộp:** ___________  
+**Repo:** ___________  
 **Độ dài khuyến nghị:** 600–1000 từ
 
 ---
@@ -29,17 +31,20 @@
 > MCP tools nào được tích hợp. Dùng kết quả từ `docs/system_architecture.md`.
 
 **Hệ thống tổng quan:**
-Hệ thống sử dụng kiến trúc Supervisor-Worker gồm 4 Worker chuyên biệt: Retrieval (dense search), Policy Tool (kiểm tra chính sách + ngoại lệ), Synthesis (tổng hợp câu trả lời) và Human Review (cho các trường hợp rủi ro cao). Supervisor điều phối luồng dựa trên phân tích ý định và trích xuất từ khóa.
+
+_________________
 
 **Routing logic cốt lõi:**
-Supervisor sử dụng Rule-based keyword matching kết hợp với Intent analysis. Nó phân loại query thành 3 nhóm: Thông tin chung (Retrieval), Chính sách/Quyền hạn (Policy Tool), và Sự cố khẩn cấp (Cần thêm cờ Risk_high).
+> Mô tả logic supervisor dùng để quyết định route (keyword matching, LLM classifier, rule-based, v.v.)
+
+_________________
 
 **MCP tools đã tích hợp:**
 > Liệt kê tools đã implement và 1 ví dụ trace có gọi MCP tool.
 
-- `search_kb`: Công cụ tìm kiếm Knowledge Base tích hợp ChromaDB.
-- `get_ticket_info`: Công cụ tra cứu trạng thái ticket từ Jira (mock).
-- `check_access_permission`: Công cụ kiểm tra quyền hạn dựa trên role.
+- `search_kb`: ___________________
+- `get_ticket_info`: ___________________
+- ___________________: ___________________
 
 ---
 
@@ -48,23 +53,29 @@ Supervisor sử dụng Rule-based keyword matching kết hợp với Intent anal
 > Chọn **1 quyết định thiết kế** mà nhóm thảo luận và đánh đổi nhiều nhất.
 > Phải có: (a) vấn đề gặp phải, (b) các phương án cân nhắc, (c) lý do chọn phương án đã chọn.
 
-**Quyết định:** Tách biệt Policy Logic ra khỏi Retrieval Worker.
+**Quyết định:** ___________________
 
 **Bối cảnh vấn đề:**
-Trong Day 08, LLM thường xuyên bỏ qua các ngoại lệ (như Flash Sale) nếu context quá dài. Chúng tôi cần một bước kiểm tra cứng (hard-check) hoặc phân tích tập trung vào policy.
+
+_________________
 
 **Các phương án đã cân nhắc:**
 
 | Phương án | Ưu điểm | Nhược điểm |
 |-----------|---------|-----------|
-| Gộp chung Prompt | Nhanh, rẻ | Dễ hallucination, khó debug |
-| Policy Worker riêng | Chính xác cao, dễ audit | Tăng latency, tốn thêm 1 LLM call |
+| ___ | ___ | ___ |
+| ___ | ___ | ___ |
 
 **Phương án đã chọn và lý do:**
-Chọn Policy Worker riêng vì độ chính xác về chính sách là quan trọng nhất cho IT Helpdesk service. Độ trễ 2-3s là chấp nhận được.
+
+_________________
 
 **Bằng chứng từ trace/code:**
-Trong trace `run_20260414_105614.json`, query về "cấp quyền Level 3 khẩn cấp" đã kích hoạt `policy_tool_worker`, sau đó worker này gọi đồng thời 2 MCP tools: `search_kb` và `get_ticket_info`.
+> Dẫn chứng cụ thể (VD: route_reason trong trace, đoạn code, v.v.)
+
+```
+[NHÓM ĐIỀN VÀO ĐÂY — ví dụ trace hoặc code snippet]
+```
 
 ---
 

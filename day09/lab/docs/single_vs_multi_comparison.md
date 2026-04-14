@@ -17,12 +17,12 @@
 
 | Metric | Day 08 (Single Agent) | Day 09 (Multi-Agent) | Delta | Ghi chú |
 |--------|----------------------|---------------------|-------|---------|
-| Avg confidence | 0.85 (est) | 0.376 | -0.474 | Day 09 confidence score is conservative |
-| Avg latency (ms) | 4500 (est) | 10556 | +6056ms | Multi-agent + supervisor routing adds overhead |
-| Abstain rate (%) | 10% | 5% | -5% | Multi-hop reasoning reduces false abstains |
-| Multi-hop accuracy | 60% | 85% | +25% | Worker specialization helps complex reasoning |
-| Routing visibility | ✗ Không có | ✓ Có route_reason | N/A | Dễ dàng theo dõi luồng suy nghĩ của hệ thống |
-| Debug time (estimate) | 20 phút | 5 phút | -15 phút | Rút ngắn thời gian nhờ trace JSON chi tiết |
+| Avg confidence | ___ | ___ | ___ | |
+| Avg latency (ms) | ___ | ___ | ___ | |
+| Abstain rate (%) | ___ | ___ | ___ | % câu trả về "không đủ info" |
+| Multi-hop accuracy | ___ | ___ | ___ | % câu multi-hop trả lời đúng |
+| Routing visibility | ✗ Không có | ✓ Có route_reason | N/A | |
+| Debug time (estimate) | ___ phút | ___ phút | ___ | Thời gian tìm ra 1 bug |
 | ___________________ | ___ | ___ | ___ | |
 
 > **Lưu ý:** Nếu không có Day 08 kết quả thực tế, ghi "N/A" và giải thích.
@@ -41,7 +41,7 @@
 
 **Kết luận:** Multi-agent có cải thiện không? Tại sao có/không?
 
-Đối với câu hỏi đơn giản, Multi-agent không cải thiện độ chính xác nhưng làm tăng latency đáng kể (do bước Supervisor). Tuy nhiên, khả năng gỡ lỗi tốt hơn bù đắp cho sự chậm trễ này trong môi trường production.
+_________________
 
 ### 2.2 Câu hỏi multi-hop (cross-document)
 
@@ -53,7 +53,7 @@
 
 **Kết luận:**
 
-Multi-agent vượt trội ở các câu hỏi multi-hop (q13, q15). Supervisor có thể nhận diện nhu cầu về chính sách và rủi ro, từ đó gọi đúng Worker chuyên biệt thay vì cố gắng dùng Retrieval thông thường.
+_________________
 
 ### 2.3 Câu hỏi cần abstain
 
@@ -65,7 +65,7 @@ Multi-agent vượt trội ở các câu hỏi multi-hop (q13, q15). Supervisor 
 
 **Kết luận:**
 
-Hệ thống Day 09 ít bị hallucination hơn vì Synthesis Worker nhận được "Policy Result" rõ ràng từ Policy Worker, giúp nó tự tin trả lời "Không" khi chính sách không cho phép thay vì cố gắng suy diễn từ context mập mờ.
+_________________
 
 ---
 
@@ -89,7 +89,9 @@ Khi answer sai → đọc trace → xem supervisor_route + route_reason
 Thời gian ước tính: ___ phút
 ```
 
-**Câu cụ thể nhóm đã debug:** Đã sửa lỗi UnicodeEncodeError trong graph.py bằng cách thay đổi định dạng in và thiết lập PYTHONIOENCODING=utf-8, giúp hệ thống hiển thị được tiếng Việt trên môi trường Windows.
+**Câu cụ thể nhóm đã debug:** _(Mô tả 1 lần debug thực tế trong lab)_
+
+_________________
 
 ---
 
@@ -106,7 +108,7 @@ Thời gian ước tính: ___ phút
 
 **Nhận xét:**
 
-Kiến trúc Multi-agent có tính modular cao hơn hẳn. Việc thêm chức năng mới chỉ là việc thêm 1 file worker và 1 dòng logic trong supervisor, không làm ảnh hưởng đến các logic đã chạy ổn định.
+_________________
 
 ---
 
