@@ -23,7 +23,7 @@ Nhóm xây dựng **trợ lý nội bộ cho bộ phận CS + IT Helpdesk**, có
 |-----------|---------|-----------------|
 | Đào Quang Thắng | Retrieval Owner | Sprint 1, 3 |
 | Phạm Hoàng Kim Liên | Eval Owner & Documentation Owner | Sprint 4, docs |
-| *(Tech Lead)* | Tech Lead | Sprint 1, 2 |
+| Nguyễn Khánh Huyền | Tech Lead | Sprint 1, 2 |
 
 ---
 
