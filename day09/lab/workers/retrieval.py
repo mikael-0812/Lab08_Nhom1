@@ -207,4 +207,3 @@ if __name__ == "__main__":
         print(f"  Sources: {result.get('retrieved_sources', [])}")
 
     print("\n✅ retrieval_worker test done.")
-# Owner: ��o Quang Th?ng
