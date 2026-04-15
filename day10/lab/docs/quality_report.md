@@ -1,13 +1,13 @@
 # Quality report — Lab Day 10 (nhóm)
 
-**run_id:** `final-clean` (pipeline chuẩn cuối) / `inject-bad` (inject corruption Sprint 3)  
+**run_id:** `2026-04-15T09-24Z` (pipeline chuẩn) / `inject-bad` (inject corruption Sprint 3)  
 **Ngày:** 2026-04-15
 
 ---
 
 ## 1. Tóm tắt số liệu
 
-| Chỉ số | Trước (inject-bad) | Sau (final-clean) | Ghi chú |
+| Chỉ số | Trước (inject-bad) | Sau (2026-04-15T09-24Z) | Ghi chú |
 |--------|---------------------|---------------------|---------|
 | raw_records | 10 | 10 | Cùng file CSV raw |
 | cleaned_records | 6 | 6 | Số lượng bằng nhau nhưng nội dung khác (14 vs 7 ngày) |
