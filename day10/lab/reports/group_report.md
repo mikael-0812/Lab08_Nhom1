@@ -88,6 +88,18 @@ Khi chạy `--no-refund-fix --skip-validate`: expectation `refund_no_stale_14d_w
 Câu `q_leave_version` ổn định ở cả 2 kịch bản vì rule quarantine HR cũ luôn bật (không bị tắt bởi `--no-refund-fix`), chứng minh cleaning rule versioning hoạt động hiệu quả.
 
 Artifact: `artifacts/eval/after_inject_bad.csv`, `artifacts/eval/before_after_eval.csv`
+ 
+### 3b. Kết quả chấm điểm tự động (Grading JSONL)
+
+Nhóm đã thực hiện chạy `grading_run.py` để kiểm tra khả năng đáp ứng các câu hỏi quan trọng từ Giảng viên. Kết quả tại `artifacts/eval/grading_run.jsonl`:
+
+| Question ID | Nội dung kiểm tra | Kết quả | Ghi chú |
+|-------------|-------------------|---------|---------|
+| `gq_d10_01` | Refund window 7 days | **PASS** | `contains_expected=true`, `hits_forbidden=false` |
+| `gq_d10_02` | P1 Resolution SLA | **PASS** | `contains_expected=true` |
+| `gq_d10_03` | HR Leave 2026 (Versioning) | **PASS** | `top1_doc_matches=true`, không dính thông tin cũ |
+
+**Điểm nhấn:** Việc `gq_d10_03` trả về đúng chunk từ doc HR 2026 ở vị trí Top-1 chứng minh cơ chế quarantine dữ liệu stale (2025) và xử lý versioning của pipeline hoạt động cực kỳ chính xác.
 
 ---
 
