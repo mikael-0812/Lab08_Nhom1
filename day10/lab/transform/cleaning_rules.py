@@ -130,6 +130,29 @@ def clean_rows(
                 )
                 fixed_text += " [cleaned: stale_refund_window]"
 
+        # ── Rule mới R1: BOM / zero-width character strip ──
+        # metric_impact: phát hiện + loại bỏ BOM (\ufeff) và zero-width chars
+        # trong chunk_text; inject BOM vào CSV sẽ tăng quarantine nếu kết
+        # hợp expectation E8.  Ở đây chỉ strip — không quarantine.
+        _ZW_CHARS = "\ufeff\u200b\u200c\u200d\u2060"
+        for zw in _ZW_CHARS:
+            if zw in fixed_text:
+                fixed_text = fixed_text.replace(zw, "")
+
+        # ── Rule mới R2: Whitespace normalize ──
+        # metric_impact: collapse nhiều space/tab/newline liên tiếp thành
+        # single space → giảm duplicate miss do whitespace khác nhau.
+        fixed_text = " ".join(fixed_text.split())
+
+        # ── Rule mới R3: Minimum meaningful content ──
+        # metric_impact: quarantine chunk có quá ít ký tự chữ/số thực
+        # (≤ 10 ký tự alphanum sau khi strip punctuation) — lọc chunk
+        # gần-rỗng mà rule "missing_chunk_text" không bắt được.
+        _alphanum_only = re.sub(r"[^a-zA-Z0-9\u00C0-\u024F\u1E00-\u1EFF]", "", fixed_text)
+        if len(_alphanum_only) < 10:
+            quarantine.append({**raw, "reason": "insufficient_meaningful_content"})
+            continue
+
         seq += 1
         cleaned.append(
             {
