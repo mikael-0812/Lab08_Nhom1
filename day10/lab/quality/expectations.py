@@ -112,5 +112,41 @@ def run_expectations(cleaned_rows: List[Dict[str, Any]]) -> Tuple[List[Expectati
         )
     )
 
+    # ── Expectation mới E7: unique chunk_id (halt) ──
+    # Nếu 2 row có cùng chunk_id → upsert sẽ mất dữ liệu → phải halt.
+    # metric_impact: inject duplicate chunk_id sẽ kích hoạt halt.
+    seen_ids: dict[str, int] = {}
+    for r in cleaned_rows:
+        cid = (r.get("chunk_id") or "").strip()
+        seen_ids[cid] = seen_ids.get(cid, 0) + 1
+    dup_ids = {k: v for k, v in seen_ids.items() if v > 1}
+    ok7 = len(dup_ids) == 0
+    results.append(
+        ExpectationResult(
+            "unique_chunk_id",
+            ok7,
+            "halt",
+            f"duplicate_chunk_ids={len(dup_ids)}",
+        )
+    )
+
+    # ── Expectation mới E8: no BOM / zero-width chars in cleaned text (warn) ──
+    # metric_impact: inject BOM (\ufeff) vào clean output sẽ trigger warn.
+    _ZW_CHARS = set("\ufeff\u200b\u200c\u200d\u2060")
+    bad_bom = [
+        r
+        for r in cleaned_rows
+        if any(ch in (r.get("chunk_text") or "") for ch in _ZW_CHARS)
+    ]
+    ok8 = len(bad_bom) == 0
+    results.append(
+        ExpectationResult(
+            "no_bom_zero_width_chars",
+            ok8,
+            "warn",
+            f"rows_with_bom={len(bad_bom)}",
+        )
+    )
+
     halt = any(not r.passed and r.severity == "halt" for r in results)
     return results, halt
