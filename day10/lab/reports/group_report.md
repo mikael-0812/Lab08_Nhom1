@@ -7,6 +7,7 @@
 | Đào Quang Thắng | **Ingestion Owner** + **Monitoring / Docs Owner** |  |
 | Phạm Hải Đăng | **Embed Owner** (Chroma collection, idempotency, eval) |  |
 | Phạm Hoàng Kim Liên | **Cleaning / Quality Owner** (cleaning_rules.py, expectations.py, quarantine) |  |
+| Nguyễn Khánh Huyền | **Review Pipeline** |  |
 
 **Ngày nộp:** 15/04/2026  
 **Repo:** Lecture-Day-08-09-10-main  
