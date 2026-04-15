@@ -4,9 +4,9 @@
 **Thành viên:**
 | Tên | Vai trò (Day 10) | Email |
 |-----|------------------|-------|
-| Đào Quang Thắng | **Ingestion Owner** + **Monitoring / Docs Owner** | thang.dao@student |
-| Phạm Hải Đăng | **Embed Owner** (Chroma collection, idempotency, eval) | dang.pham@student |
-| Phạm Hoàng Kim Liên | **Cleaning / Quality Owner** (cleaning_rules.py, expectations.py, quarantine) | lien.pham@student |
+| Đào Quang Thắng | **Ingestion Owner** + **Monitoring / Docs Owner** |  |
+| Phạm Hải Đăng | **Embed Owner** (Chroma collection, idempotency, eval) |  |
+| Phạm Hoàng Kim Liên | **Cleaning / Quality Owner** (cleaning_rules.py, expectations.py, quarantine) |  |
 
 **Ngày nộp:** 2026-04-15  
 **Repo:** Lecture-Day-08-09-10-main  
